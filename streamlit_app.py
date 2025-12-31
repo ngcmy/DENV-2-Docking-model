@@ -413,7 +413,7 @@ def display_about_page():
     """)
 
 def main():
-    st.set_page_config(layout="wide", page_title=f"Diabetes Docking v{APP_VERSION}")
+    st.set_page_config(layout="wide", page_title=f"Diabetes Docking")
     
     initialize_directories()
 
