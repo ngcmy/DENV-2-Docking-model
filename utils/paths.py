@@ -1,6 +1,6 @@
 from pathlib import Path
 
-# APP_VERSION = "1.0.0" # Updated version
+APP_VERSION = "1.0.0" # Updated version
 
 BASE_GITHUB_URL_FOR_DATA = "https://raw.githubusercontent.com/ngcmy/DENV-2-Docking-model/main/"
 GH_API_BASE_URL = "https://api.github.com/repos/"
@@ -29,6 +29,7 @@ LIGAND_PREP_DIR_LOCAL = WORKSPACE_PARENT_DIR / "prepared_ligands"
 LIGAND_UPLOAD_TEMP_DIR = WORKSPACE_PARENT_DIR / "uploaded_ligands_temp"
 ZIP_EXTRACT_DIR_LOCAL = WORKSPACE_PARENT_DIR / "zip_extracted_ligands"
 DOCKING_OUTPUT_DIR_LOCAL = APP_ROOT / "autodock_outputs"
+
 
 
 
