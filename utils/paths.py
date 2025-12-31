@@ -7,9 +7,9 @@ GH_API_BASE_URL = "https://api.github.com/repos/"
 GH_OWNER = "ngcmy"
 GH_REPO = "DENV-2-Docking-model"
 GH_BRANCH = "main"
-# GH_ENSEMBLE_DOCKING_ROOT_PATH = "ensemble-docking"
-# RECEPTOR_SUBDIR_GH = "ensemble_protein/"
-# CONFIG_SUBDIR_GH = "config/"
+GH_ENSEMBLE_DOCKING_ROOT_PATH = "ensemble-docking"
+RECEPTOR_SUBDIR_GH = "ensemble_protein/"
+CONFIG_SUBDIR_GH = "config/"
 
 APP_ROOT = Path(".") # Assumes streamlit_app.py is in the root of your project
 ENSEMBLE_DOCKING_DIR_LOCAL = APP_ROOT / "utils"
@@ -29,6 +29,7 @@ LIGAND_PREP_DIR_LOCAL = WORKSPACE_PARENT_DIR / "prepared_ligands"
 LIGAND_UPLOAD_TEMP_DIR = WORKSPACE_PARENT_DIR / "uploaded_ligands_temp"
 ZIP_EXTRACT_DIR_LOCAL = WORKSPACE_PARENT_DIR / "zip_extracted_ligands"
 DOCKING_OUTPUT_DIR_LOCAL = APP_ROOT / "autodock_outputs"
+
 
 
 
