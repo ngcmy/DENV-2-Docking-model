@@ -420,13 +420,11 @@ def main():
     #st.sidebar.image("https://raw.githubusercontent.com/HenryChritopher02/GSJ/main/docking-app.png", width=300)
     st.sidebar.title("Navigation")
 
-    app_mode = st.sidebar.radio("Go to:", ("T2DM Docking", "T2DM AI prediction", "About"))
+    app_mode = st.sidebar.radio("Go to:", ("T2DM Docking", "About"))
     st.sidebar.markdown("---")
 
     if app_mode == "T2DM Docking":
         display_diabetes_docking_procedure()
-    elif app_mode == "T2DM AI prediction":
-        display_ml_prediction_procedure()
     elif app_mode == "About":
         display_about_page()
 
