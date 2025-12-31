@@ -193,8 +193,8 @@ def display_diabetes_docking_procedure():
                     download_count = 0
                     for key in selected_targets_keys:
                         info = DIABETES_TARGETS[key]
-                        download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"targets/{info['pdbqt']}", info['pdbqt'], RECEPTOR_DIR_LOCAL)
-                        download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"configs/{info['config']}", info['config'], CONFIG_DIR_LOCAL)
+                        download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Target/{info['pdbqt']}", info['pdbqt'], RECEPTOR_DIR_LOCAL)
+                        download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Config/{info['config']}", info['config'], CONFIG_DIR_LOCAL)
                         download_count += 1
                     st.success(f"Successfully checked/downloaded data for {download_count} targets.")
 
