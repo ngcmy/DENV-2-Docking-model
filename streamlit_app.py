@@ -18,7 +18,7 @@ from meeko import MoleculePreparation, PDBQTMolecule # FIX: Added PDBQTMolecule 
 # Giữ lại các import từ file utils cục bộ để tận dụng cấu trúc hiện có
 # Lưu ý: Vì logic đơn giản hóa, ta sẽ không dùng hết tất cả biến, nhưng giữ lại import để tránh lỗi
 from utils.paths import (
-    APP_VERSION, BASE_GITHUB_URL_FOR_DATA, 
+    BASE_GITHUB_URL_FOR_DATA, 
     APP_ROOT, VINA_EXECUTABLE_NAME, VINA_PATH_LOCAL,
     RECEPTOR_DIR_LOCAL, CONFIG_DIR_LOCAL,
     LIGAND_PREP_DIR_LOCAL, LIGAND_UPLOAD_TEMP_DIR, ZIP_EXTRACT_DIR_LOCAL,
