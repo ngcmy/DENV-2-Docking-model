@@ -34,26 +34,26 @@ from utils.app_utils import (
 # --- CẤU HÌNH CÁC MỤC TIÊU TIỂU ĐƯỜNG ---
 # Giả định các file này nằm trong thư mục 'receptors' và 'configs' trên GitHub
 # Bạn cần đảm bảo tên file trên GitHub khớp với định nghĩa ở đây.
-DIABETES_TARGETS = {
-    "DPP-4 (4A5S)": {
-        "pdbqt": "dpp4.pdbqt",
-        "config": "dpp4.txt"
+DENV2_TARGETS = {
+    "NS1 (4O6B)": {
+        "pdbqt": "NS1.pdbqt",
+        "config": "NS1.txt"
     },
-    "GLP1-R (6X19)": {
-        "pdbqt": "glp1r.pdbqt",
-        "config": "glp1r.txt"
+    "NS3 Helicase (2BHR)": {
+        "pdbqt": "NS3 Helicase.pdbqt",
+        "config": "NS3 Helicase.txt"
     },
-    "PPAR-γ (5Y2O)": {
-        "pdbqt": "pparg.pdbqt",
-        "config": "pparg.txt"
+    "NS2B-NS3 (6MO1)": {
+        "pdbqt": "NS2B-NS3.pdbqt",
+        "config": "NS2B-NS3.txt"
     },
-    "SGLT2 (8HEZ)": {
-        "pdbqt": "sglt2.pdbqt",
-        "config": "sglt2.txt"
+    "NS5 MTase (2P3O)": {
+        "pdbqt": "NS5 MTase.pdbqt",
+        "config": "NS5 MTase.txt"
     },
-    "SUR1 (7S5V)": {
-        "pdbqt": "sur1.pdbqt",
-        "config": "sur1.txt"
+    "NS5 RdRp (7HKD)": {
+        "pdbqt": "NS5 RdRp.pdbqt",
+        "config": "NS5 RdRp.txt"
     }
 }
 
@@ -163,9 +163,9 @@ def view_complex(protein_path, ligand_path):
     except FileNotFoundError:
         st.error("Could not find files for visualization.")
 
-def display_diabetes_docking_procedure():
-    st.header(f"Molecular Docking Model System Targeting Key Proteins Involved In T2DM")
-    st.image("https://raw.githubusercontent.com/HenryChritopher02/GSJ/main/docking-app.png", use_column_width=True)
+def display_denv2_docking_procedure():
+    st.header(f"Molecular Docking Model System Targeting Key Proteins Involved In DENV-2")
+    st.image("https://github.com/ngcmy/DENV-2-Docking-model/Docking-app.png", use_column_width=True)
     
     # Initialize session state
     if 'docking_results' not in st.session_state:
@@ -177,12 +177,12 @@ def display_diabetes_docking_procedure():
     with st.sidebar:
         vina_ready = check_vina_binary(show_success=False)
         st.subheader("Select Targets")
-        st.caption("Choose targets associated with Diabetes Type 2:")
+        st.caption("Choose targets associated with DENV-2:")
         
         selected_targets_keys = st.multiselect(
             "Select Target(s):",
-            options=list(DIABETES_TARGETS.keys()),
-            default=[list(DIABETES_TARGETS.keys())[0]]
+            options=list(DENV2_TARGETS.keys()),
+            default=[list(DENV2_TARGETS.keys())[0]]
         )
         
         if st.button("Fetch Selected Targets Data", key="fetch_targets_btn"):
@@ -192,7 +192,7 @@ def display_diabetes_docking_procedure():
                 with st.spinner("Downloading receptor and config files..."):
                     download_count = 0
                     for key in selected_targets_keys:
-                        info = DIABETES_TARGETS[key]
+                        info = DENV2_TARGETS[key]
                         download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Target/{info['pdbqt']}", info['pdbqt'], RECEPTOR_DIR_LOCAL)
                         download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Config/{info['config']}", info['config'], CONFIG_DIR_LOCAL)
                         download_count += 1
@@ -288,7 +288,7 @@ def display_diabetes_docking_procedure():
             else:
                 targets_ready = []
                 for t_key in selected_targets_keys:
-                    t_info = DIABETES_TARGETS[t_key]
+                    t_info = DENV2_TARGETS[t_key]
                     r_path = RECEPTOR_DIR_LOCAL / t_info['pdbqt']
                     c_path = CONFIG_DIR_LOCAL / t_info['config']
                     if r_path.exists() and c_path.exists(): targets_ready.append((t_key, r_path, c_path))
@@ -310,7 +310,7 @@ def display_diabetes_docking_procedure():
                         
                         for t_name, r_path, c_path in targets_ready:
                             status_text.text(f"Docking {lig_name} against {t_name}...")
-                            out_filename = f"{lig_name}_{DIABETES_TARGETS[t_name]['pdbqt'].replace('.pdbqt', '')}_out.pdbqt"
+                            out_filename = f"{lig_name}_{DENV2_TARGETS[t_name]['pdbqt'].replace('.pdbqt', '')}_out.pdbqt"
                             out_path = DOCKING_OUTPUT_DIR_LOCAL / out_filename
                             
                             ret_code, stdout, stderr = run_single_docking(VINA_PATH_LOCAL, r_path, lig_path, c_path, out_path)
@@ -371,7 +371,7 @@ def display_diabetes_docking_procedure():
                 selected_target = st.selectbox("Select Target:", score_cols)
 
             if st.button("Render 3D Structure"):
-                target_info = DIABETES_TARGETS[selected_target]
+                target_info = DENV2_TARGETS[selected_target]
                 receptor_file = RECEPTOR_DIR_LOCAL / target_info['pdbqt']
                 out_filename = f"{selected_ligand}_{target_info['pdbqt'].replace('.pdbqt', '')}_out.pdbqt"
                 docked_ligand_file = DOCKING_OUTPUT_DIR_LOCAL / out_filename
@@ -396,35 +396,35 @@ def display_diabetes_docking_procedure():
             st.info("No docking results to analyze yet. Please run docking in Tab 2.")
 
 def display_about_page():
-    st.header("About T2DM Docking App")
-    st.markdown(f"**Molecular Docking Model System Targeting Key Proteins Involved In T2DM**")
+    st.header("About DENV2 Docking App")
+    st.markdown(f"**Molecular Docking Model System Targeting Key Proteins Involved In DENV2**")
     st.markdown("""
-    This application is specialized for screening compounds against key therapeutic targets for T2DM.
+    This application is specialized for screening compounds against key therapeutic targets for DENV2.
     
     **Features:**
-    - **Focused Targets:** Pre-configured screening against 5 major diabetes-related proteins:
-        1. **DPP-4 (4A5S):** Enzyme that degrades incretin hormones.
-        2. **GLP1-R (6X19):** Receptor that stimulates glucose-dependent insulin secretion.
-        3. **PPAR-γ (5Y2O):** Nuclear receptor regulating fatty acid storage and glucose metabolism.
-        4. **SGLT2 (8HEZ):** Transporter responsible for glucose reabsorption in the kidneys.
-        5. **SUR1 (7S5V):** Regulatory subunit of K-ATP channels controlling insulin release.
+    - **Focused Targets:** Pre-configured screening against these major DENV2 key proteins:
+        1. **NS1:** A multifunctional glycoprotein essential for viral replication and a primary mediator of vascular leakage in the host.
+        2. **NS2-NS3B Protease:** A critical enzyme complex responsible for the proteolytic cleavage of the viral polyprotein into functional units.
+        3. **NS3 Helicase:** An enzyme that unwinds double-stranded RNA templates to facilitate the viral genome replication process.
+        4. **NS5 MTase:** Responsible for the 5' capping of viral RNA to ensure its stability and enable evasion of the host immune system.
+        5. **NS5 RdRp:** The core polymerase enzyme that directly catalyzes the synthesis and elongation of the viral RNA genome.
     - **Simplified Input:** Direct upload of `.pdbqt` files or `.zip` archives.
     - **Automated Vina:** Runs AutoDock Vina automatically for all combinations.
     """)
 
 def main():
-    st.set_page_config(layout="wide", page_title=f"Diabetes Docking")
+    st.set_page_config(layout="wide", page_title=f"DENV-2 Docking")
     
     initialize_directories()
 
-    #st.sidebar.image("https://raw.githubusercontent.com/HenryChritopher02/GSJ/main/docking-app.png", width=300)
+    #st.sidebar.image("https://github.com/ngcmy/DENV-2-Docking-model/Docking-app.png", width=300)
     st.sidebar.title("Navigation")
 
-    app_mode = st.sidebar.radio("Go to:", ("T2DM Docking", "About"))
+    app_mode = st.sidebar.radio("Go to:", ("DENV-2 Docking", "About"))
     st.sidebar.markdown("---")
 
-    if app_mode == "T2DM Docking":
-        display_diabetes_docking_procedure()
+    if app_mode == "DENV-2 Docking":
+        display_denv2_docking_procedure()
     elif app_mode == "About":
         display_about_page()
 
