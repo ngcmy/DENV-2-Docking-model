@@ -250,18 +250,18 @@ def display_denv2_docking_procedure():
                         st.error("Invalid SMILES.")
 
         elif input_method == "Use Example Molecule":
-            st.markdown("Using **Metformin** (Antidiabetic) as example.")
-            example_smi = "CN(C)C(=N)NC(=N)N"
+            st.markdown("Using **Mosnodenvir (JNJ-1802)** as example.")
+            example_smi = "COC1=CC(N[C@H](C(=O)C2=CNC3=CC=C(OC(F)(F)F)C=C23)C2=CC=C(Cl)C=C2OC)=CC(=C1)S(C)(=O)=O"
             st.code(example_smi)
             if st.button("Process Example"):
-                with st.spinner("Processing Metformin..."):
+                with st.spinner("Processing Benzene..."):
                     result = convert_smiles_to_pdbqt(
-                        example_smi, "metformin_example", LIGAND_PREP_DIR_LOCAL, 
+                        example_smi, "mosnodenvir_example", LIGAND_PREP_DIR_LOCAL, 
                         7.4, False, False, SCRUB_PY_LOCAL_PATH, MK_PREPARE_LIGAND_PY_LOCAL_PATH
                     )
                     if result:
                         new_ligands.append(result['pdbqt_path'])
-                        st.success("Metformin added to docking list.")
+                        st.success("Mosnodenvir added to docking list.")
                     else:
                         st.error("Conversion failed.")
 
@@ -417,7 +417,7 @@ def main():
     
     initialize_directories()
 
-    #st.sidebar.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png", width=300)
+    #st.sidebar.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png?raw=true", width=300)
     st.sidebar.title("Navigation")
 
     app_mode = st.sidebar.radio("Go to:", ("DENV-2 Docking", "About"))
