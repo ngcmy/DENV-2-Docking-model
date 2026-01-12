@@ -15,7 +15,7 @@ import py3Dmol
 from stmol import showmol
 from meeko import MoleculePreparation, PDBQTMolecule
 
-# --- IMPORTS TỪ UTILS (GIỮ NGUYÊN) ---
+# --- IMPORTS TỪ UTILS ---
 from utils.paths import (
     BASE_GITHUB_URL_FOR_DATA, 
     APP_ROOT, VINA_EXECUTABLE_NAME, VINA_PATH_LOCAL,
@@ -161,6 +161,7 @@ def view_complex_with_box(protein_pdb_content, box_config=None, box_color='green
 
 def display_denv2_docking_procedure():
     st.header(f"Docking Model System Targeting In DENV-2 Key Proteins")
+    st.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png?raw=true", use_column_width=True)
     
     # Initialize session state
     if 'docking_results' not in st.session_state: st.session_state.docking_results = []
@@ -406,10 +407,6 @@ def display_denv2_docking_procedure():
 def display_about_page():
     st.header("About DENV2 Docking App")
     st.markdown("Developed for DENV-2 Inhibitor Screening.")
-
-def display_denv2_docking_procedure():
-    st.header(f"Docking Model System Targeting In DENV-2 Key Proteins")
-    st.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png?raw=true", use_column_width=True)
 
 def main():
     st.set_page_config(layout="wide", page_title="DENV-2 Docking System")
