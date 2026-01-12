@@ -405,8 +405,21 @@ def display_denv2_docking_procedure():
             st.info("No docking results yet. Run Tab 3 first.")
 
 def display_about_page():
-    st.header("About DENV2 Docking App")
-    st.markdown("Developed for DENV-2 Inhibitor Screening.")
+    st.header("About DENV-2 Docking App")
+    st.markdown(f"**Docking Model System Targeting In DENV-2 Key Proteins**")
+    st.markdown("""
+    This application is specialized for screening compounds against key therapeutic targets for DENV2.
+    
+    **Features:**
+    - **Focused Targets:** Pre-configured screening against these major DENV2 key proteins:
+        1. **NS1:** A multifunctional glycoprotein essential for viral replication and a primary mediator of vascular leakage in the host.
+        2. **NS2-NS3B Protease:** A critical enzyme complex responsible for the proteolytic cleavage of the viral polyprotein into functional units.
+        3. **NS3 Helicase:** An enzyme that unwinds double-stranded RNA templates to facilitate the viral genome replication process.
+        4. **NS5 MTase:** Responsible for the 5' capping of viral RNA to ensure its stability and enable evasion of the host immune system.
+        5. **NS5 RdRp:** The core polymerase enzyme that directly catalyzes the synthesis and elongation of the viral RNA genome.
+    - **Simplified Input:** Direct upload of `.pdbqt` files or `.zip` archives.
+    - **Automated Vina:** Runs AutoDock Vina automatically for all combinations.
+    """)
 
 def main():
     st.set_page_config(layout="wide", page_title="DENV-2 Docking System")
