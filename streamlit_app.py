@@ -160,7 +160,7 @@ def view_complex_with_box(protein_pdb_content, box_config=None, box_color='green
 # --- MAIN APP ---
 
 def display_denv2_docking_procedure():
-    st.header(f"Molecular Docking Model System Targeting Key Proteins Involved In DENV-2")
+    st.header(f"Docking Model System Targeting In DENV-2 Key Proteins")
     
     # Initialize session state
     if 'docking_results' not in st.session_state: st.session_state.docking_results = []
@@ -170,11 +170,11 @@ def display_denv2_docking_procedure():
     # Check Vina
     vina_ready = check_vina_binary(show_success=False)
 
-    # --- TABS LAYOUT (4 PHẦN) ---
+    # --- TABS LAYOUT ---
     tab1, tab2, tab3, tab4 = st.tabs(["📂 1. Ligand Input", "🎯 2. Select Target & Viz", "🚀 3. Run Docking", "📊 4. Analysis & 3D"])
 
     # ==========================================
-    # PHẦN 1: LIGAND INPUT (Giữ nguyên logic)
+    # PHẦN 1: LIGAND INPUT 
     # ==========================================
     with tab1:
         st.info("Prepare ligands for docking.")
@@ -224,7 +224,7 @@ def display_denv2_docking_procedure():
             st.write(f"✅ **{len(st.session_state.prepared_ligand_paths)} Ligands ready.**")
 
     # ==========================================
-    # PHẦN 2: SELECT TARGET & VISUALIZATION (Mới)
+    # PHẦN 2: SELECT TARGET & VISUALIZATION
     # ==========================================
     with tab2:
         st.subheader("Select Targets for Screening")
@@ -304,7 +304,7 @@ def display_denv2_docking_procedure():
                     st.warning("Files not found. Please click 'Fetch/Update Selected Targets Data' above first.")
 
     # ==========================================
-    # PHẦN 3: RUN DOCKING (Giữ logic cũ, đổi nguồn targets)
+    # PHẦN 3: RUN DOCKING
     # ==========================================
     with tab3:
         st.write("### Simulation Controls")
@@ -362,7 +362,7 @@ def display_denv2_docking_procedure():
                     st.balloons()
 
     # ==========================================
-    # PHẦN 4: ANALYSIS & 3D (Giữ nguyên logic cũ)
+    # PHẦN 4: ANALYSIS & 3D
     # ==========================================
     with tab4:
         if st.session_state.docking_results:
@@ -406,6 +406,10 @@ def display_denv2_docking_procedure():
 def display_about_page():
     st.header("About DENV2 Docking App")
     st.markdown("Developed for DENV-2 Inhibitor Screening.")
+
+def display_denv2_docking_procedure():
+    st.header(f"Docking Model System Targeting In DENV-2 Key Proteins")
+    st.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png?raw=true", use_column_width=True)
 
 def main():
     st.set_page_config(layout="wide", page_title="DENV-2 Docking System")
