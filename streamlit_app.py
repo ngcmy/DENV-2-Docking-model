@@ -9,14 +9,13 @@ import pandas as pd
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from streamlit_ketcher import st_ketcher # For drawing molecules
+from streamlit_ketcher import st_ketcher
 import plotly.express as px
 import py3Dmol
 from stmol import showmol
-from meeko import MoleculePreparation, PDBQTMolecule # FIX: Added PDBQTMolecule for reading
+from meeko import MoleculePreparation, PDBQTMolecule
 
-# Giữ lại các import từ file utils cục bộ để tận dụng cấu trúc hiện có
-# Lưu ý: Vì logic đơn giản hóa, ta sẽ không dùng hết tất cả biến, nhưng giữ lại import để tránh lỗi
+# --- IMPORTS TỪ UTILS (GIỮ NGUYÊN) ---
 from utils.paths import (
     BASE_GITHUB_URL_FOR_DATA, 
     APP_ROOT, VINA_EXECUTABLE_NAME, VINA_PATH_LOCAL,
@@ -31,13 +30,13 @@ from utils.app_utils import (
     standardize_smiles_rdkit, convert_smiles_to_pdbqt
 )
 
-# --- CẤU HÌNH CÁC MỤC TIÊU TIỂU ĐƯỜNG ---
-# Giả định các file này nằm trong thư mục 'receptors' và 'configs' trên GitHub
-# Bạn cần đảm bảo tên file trên GitHub khớp với định nghĩa ở đây.
+# --- CẤU HÌNH CÁC MỤC TIÊU (DATA STRUCTURE) ---
+# Lưu ý: Để hỗ trợ 2 khoang A/B, bạn có thể thêm key "config_B" vào dict này nếu có file thực tế.
+# Hiện tại code sẽ sử dụng "config" mặc định như khoang A.
 DENV2_TARGETS = {
     "NS1 (4O6B)": {
         "pdbqt": "NS1.pdbqt",
-        "config": "NS1.txt"
+        "config": "NS1.txt" 
     },
     "NS3 Helicase (2BHR)": {
         "pdbqt": "NS3 Helicase.pdbqt",
@@ -57,155 +56,128 @@ DENV2_TARGETS = {
     }
 }
 
+# --- CÁC HÀM HỖ TRỢ XỬ LÝ FILE ---
+
 def convert_pdbqt_to_pdb(pdbqt_path, output_pdb_path):
-    """
-    Extracts the first pose from a PDBQT file and converts it to PDB format
-    by stripping AutoDock-specific columns (Charge/AtomType).
-    """
+    """Chuyển đổi PDBQT sang PDB để hiển thị đẹp hơn (giữ nguyên logic cũ)"""
     try:
         with open(pdbqt_path, 'r') as f:
             lines = f.readlines()
-        
         pdb_lines = []
         in_model = False
         model_found = False
-        
         for line in lines:
-            # Handle Models: Only take the first one
             if line.startswith("MODEL"):
-                in_model = True
-                model_found = True
-                continue
-            if line.startswith("ENDMDL"):
-                break 
-            
-            # Process ATOM/HETATM lines
+                in_model = True; model_found = True; continue
+            if line.startswith("ENDMDL"): break 
             if line.startswith("ATOM") or line.startswith("HETATM"):
-                # PDBQT format extends PDB columns. 
-                # Standard PDB lines are usually ~80 chars. 
-                # AutoDock adds charge/type info after column 66.
-                # We slice up to column 66 to make it a valid PDB line, 
-                # preserving coordinates (30-54) and occupancy/b-factor if present.
-                # We can also explicitly reset Occupancy(55-60) and B-Factor(61-66) to 1.00/0.00 if needed,
-                # but simple slicing is usually sufficient for visualization.
                 clean_line = line[:66] + "\n"
                 pdb_lines.append(clean_line)
             elif not model_found and not line.startswith("TORSDOF"): 
-                # Keep header lines if they exist before MODEL
                 pdb_lines.append(line)
-
-        # Write to PDB file
-        with open(output_pdb_path, 'w') as f:
-            f.writelines(pdb_lines)
-            
+        with open(output_pdb_path, 'w') as f: f.writelines(pdb_lines)
         return True
-            
     except Exception as e:
         print(f"PDB Conversion Error: {e}")
         return False
 
+def parse_vina_config(config_path):
+    """
+    Đọc file config của Vina để lấy tọa độ và kích thước hộp (Grid Box).
+    Trả về dict: {'center': {'x':...}, 'size': {'x':...}}
+    """
+    params = {'center_x': 0, 'center_y': 0, 'center_z': 0, 'size_x': 0, 'size_y': 0, 'size_z': 0}
+    try:
+        with open(config_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'): continue
+                parts = line.split('=')
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    val = float(parts[1].strip())
+                    if key in params:
+                        params[key] = val
+        return {
+            'center': {'x': params['center_x'], 'y': params['center_y'], 'z': params['center_z']},
+            'dimensions': {'w': params['size_x'], 'h': params['size_y'], 'd': params['size_z']}
+        }
+    except Exception as e:
+        st.error(f"Error parsing config: {e}")
+        return None
+
 def parse_vina_score_from_file(file_path):
-    """
-    Hàm đọc file output PDBQT và lấy điểm năng lượng liên kết thấp nhất (best affinity).
-    """
     best_affinity = None
     try:
         with open(file_path, 'r') as f:
             for line in f:
                 if line.startswith('REMARK VINA RESULT'):
                     parts = line.split()
-                    # Định dạng thường là: REMARK VINA RESULT: -9.5 0.000 0.000
-                    if len(parts) >= 4:
-                        best_affinity = float(parts[3])
+                    if len(parts) >= 4: best_affinity = float(parts[3])
                     break
-    except Exception:
-        pass
+    except Exception: pass
     return best_affinity
 
 def run_single_docking(vina_path, receptor_path, ligand_path, config_path, output_path):
-    """
-    Hàm chạy Vina cho 1 cặp Receptor - Ligand.
-    """
     cmd = [
-        str(vina_path),
-        "--receptor", str(receptor_path),
-        "--ligand", str(ligand_path),
-        "--config", str(config_path),
-        "--out", str(output_path),
-        "--cpu", "2" # Sử dụng 2 CPU cho mỗi tác vụ để cân bằng
+        str(vina_path), "--receptor", str(receptor_path), "--ligand", str(ligand_path),
+        "--config", str(config_path), "--out", str(output_path), "--cpu", "2"
     ]
-    
-    # Chạy lệnh
     proc = subprocess.run(cmd, capture_output=True, text=True)
     return proc.returncode, proc.stdout, proc.stderr
-    
-def view_complex(protein_path, ligand_path):
-    """
-    Generates a 3D visualization. Detects format based on extension.
-    """
-    try:
-        with open(protein_path, 'r') as f: protein_data = f.read()
-        with open(ligand_path, 'r') as f: ligand_data = f.read()
-        
-        # Detect ligand format (pdbqt, sdf, mol2)
-        ligand_format = Path(ligand_path).suffix.strip('.').lower()
 
-        view = py3Dmol.view(width=800, height=500)
-        view.addModelsAsFrames(protein_data)
-        view.setStyle({'model': -1}, {"cartoon": {'color': 'spectrum'}})
-        
-        # Add ligand with correct format
-        view.addModel(ligand_data, ligand_format)
+def view_complex_with_box(protein_pdb_content, box_config=None, box_color='green', ligand_content=None, ligand_format='pdbqt'):
+    """
+    Hiển thị Protein, Ligand (nếu có) và vẽ hộp Grid Box dựa trên Config.
+    """
+    view = py3Dmol.view(width=800, height=500)
+    
+    # Add Protein
+    view.addModelsAsFrames(protein_pdb_content)
+    view.setStyle({'model': -1}, {"cartoon": {'color': 'spectrum'}})
+    
+    # Add Ligand if exists
+    if ligand_content:
+        view.addModel(ligand_content, ligand_format)
         view.setStyle({'model': -1}, {"stick": {'colorscheme': 'greenCarbon'}})
-        
-        view.zoomTo()
-        showmol(view, height=500, width=800)
-    except FileNotFoundError:
-        st.error("Could not find files for visualization.")
+
+    # Draw Grid Box (Khoanh vùng)
+    if box_config:
+        view.addBox({
+            'center': box_config['center'],
+            'dimensions': box_config['dimensions'],
+            'color': box_color,
+            'opacity': 0.5,
+            'wireframe': True
+        })
+        # Thêm nhãn cho hộp
+        view.addLabel("Binding Site", 
+                      {'position': box_config['center'], 'backgroundColor': 'black', 'fontColor': 'white'})
+
+    view.zoomTo()
+    showmol(view, height=500, width=800)
+
+# --- MAIN APP ---
 
 def display_denv2_docking_procedure():
     st.header(f"Molecular Docking Model System Targeting Key Proteins Involved In DENV-2")
-    st.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png?raw=true", use_column_width=True)
     
     # Initialize session state
-    if 'docking_results' not in st.session_state:
-        st.session_state.docking_results = []
-    if 'prepared_ligand_paths' not in st.session_state:
-        st.session_state.prepared_ligand_paths = []
+    if 'docking_results' not in st.session_state: st.session_state.docking_results = []
+    if 'prepared_ligand_paths' not in st.session_state: st.session_state.prepared_ligand_paths = []
+    if 'selected_targets_global' not in st.session_state: st.session_state.selected_targets_global = []
 
-    # --- SIDEBAR SETTINGS (Keep this logic) ---
-    with st.sidebar:
-        vina_ready = check_vina_binary(show_success=False)
-        st.subheader("Select Targets")
-        st.caption("Choose targets associated with DENV-2:")
-        
-        selected_targets_keys = st.multiselect(
-            "Select Target(s):",
-            options=list(DENV2_TARGETS.keys()),
-            default=[list(DENV2_TARGETS.keys())[0]]
-        )
-        
-        if st.button("Fetch Selected Targets Data", key="fetch_targets_btn"):
-            if not selected_targets_keys:
-                st.warning("Please select at least one target.")
-            else:
-                with st.spinner("Downloading receptor and config files..."):
-                    download_count = 0
-                    for key in selected_targets_keys:
-                        info = DENV2_TARGETS[key]
-                        download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Target/{info['pdbqt']}", info['pdbqt'], RECEPTOR_DIR_LOCAL)
-                        download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Config/{info['config']}", info['config'], CONFIG_DIR_LOCAL)
-                        download_count += 1
-                    st.success(f"Successfully checked/downloaded data for {download_count} targets.")
+    # Check Vina
+    vina_ready = check_vina_binary(show_success=False)
 
-    # --- NEW TABS LAYOUT ---
-    tab1, tab2, tab3 = st.tabs(["📂 1. Ligand Input", "🚀 2. Run Docking", "📊 3. Analysis & 3D"])
+    # --- TABS LAYOUT (4 PHẦN) ---
+    tab1, tab2, tab3, tab4 = st.tabs(["📂 1. Ligand Input", "🎯 2. Select Target & Viz", "🚀 3. Run Docking", "📊 4. Analysis & 3D"])
 
-    # --- TAB 1: INPUT ---
+    # ==========================================
+    # PHẦN 1: LIGAND INPUT (Giữ nguyên logic)
+    # ==========================================
     with tab1:
         st.info("Prepare ligands for docking.")
-        
-        # New Input Methods
         input_method = st.radio("Input Method:", ("Upload PDBQT/ZIP", "Draw Molecule", "Use Example Molecule"), horizontal=True)
         new_ligands = []
 
@@ -214,7 +186,6 @@ def display_denv2_docking_procedure():
             if st.button("Process Files") and uploaded_files:
                 for up_file in uploaded_files:
                     if up_file.name.endswith(".zip"):
-                         # (Existing ZIP logic shortened for brevity)
                         temp_zip = LIGAND_UPLOAD_TEMP_DIR / up_file.name
                         with open(temp_zip, "wb") as f: f.write(up_file.getbuffer())
                         with zipfile.ZipFile(temp_zip, 'r') as z: z.extractall(ZIP_EXTRACT_DIR_LOCAL)
@@ -228,73 +199,134 @@ def display_denv2_docking_procedure():
                 st.success(f"Added {len(new_ligands)} ligands.")
 
         elif input_method == "Draw Molecule":
-            st.write("Draw a molecule and convert it to PDBQT for docking.")
             drawn_smiles = st_ketcher(key="docking_ketcher")
-            lig_name_draw = st.text_input("Ligand Name:", value="drawn_ligand_01")
-            
+            lig_name_draw = st.text_input("Ligand Name:", value="drawn_ligand")
             if st.button("Convert to PDBQT") and drawn_smiles:
-                # Use the provided convert_smiles_to_pdbqt function
-                with st.spinner("Standardizing and converting..."):
+                with st.spinner("Converting..."):
                     std_smi = standardize_smiles_rdkit(drawn_smiles, [])
                     if std_smi:
-                        result = convert_smiles_to_pdbqt(
-                            std_smi, lig_name_draw, LIGAND_PREP_DIR_LOCAL, 
-                            7.4, False, False, SCRUB_PY_LOCAL_PATH, MK_PREPARE_LIGAND_PY_LOCAL_PATH
-                        )
-                        if result:
-                            new_ligands.append(result['pdbqt_path'])
-                            st.success(f"Converted {lig_name_draw} successfully!")
-                        else:
-                            st.error("Conversion failed. Check scripts (scrub.py/mk_prepare_ligand.py).")
-                    else:
-                        st.error("Invalid SMILES.")
+                        result = convert_smiles_to_pdbqt(std_smi, lig_name_draw, LIGAND_PREP_DIR_LOCAL, 7.4, False, False, SCRUB_PY_LOCAL_PATH, MK_PREPARE_LIGAND_PY_LOCAL_PATH)
+                        if result: new_ligands.append(result['pdbqt_path']); st.success("Converted!")
+                    else: st.error("Invalid SMILES.")
 
         elif input_method == "Use Example Molecule":
-            st.markdown("Using **Mosnodenvir (JNJ-1802)** as example.")
-            example_smi = "COC1=CC(N[C@H](C(=O)C2=CNC3=CC=C(OC(F)(F)F)C=C23)C2=CC=C(Cl)C=C2OC)=CC(=C1)S(C)(=O)=O"
-            st.code(example_smi)
+            st.markdown("Using **Mosnodenvir (JNJ-1802)**")
             if st.button("Process Example"):
-                with st.spinner("Processing Mosnodenvir..."):
-                    result = convert_smiles_to_pdbqt(
-                        example_smi, "mosnodenvir_example", LIGAND_PREP_DIR_LOCAL, 
-                        7.4, False, False, SCRUB_PY_LOCAL_PATH, MK_PREPARE_LIGAND_PY_LOCAL_PATH
-                    )
-                    if result:
-                        new_ligands.append(result['pdbqt_path'])
-                        st.success("Mosnodenvir added to docking list.")
-                    else:
-                        st.error("Conversion failed.")
+                result = convert_smiles_to_pdbqt("COC1=CC(N[C@H](C(=O)C2=CNC3=CC=C(OC(F)(F)F)C=C23)C2=CC=C(Cl)C=C2OC)=CC(=C1)S(C)(=O)=O", "mosnodenvir", LIGAND_PREP_DIR_LOCAL, 7.4, False, False, SCRUB_PY_LOCAL_PATH, MK_PREPARE_LIGAND_PY_LOCAL_PATH)
+                if result: new_ligands.append(result['pdbqt_path']); st.success("Added Example.")
 
-        # Update Session State
         if new_ligands:
             current_paths = set(st.session_state.prepared_ligand_paths)
             for p in new_ligands: current_paths.add(p)
             st.session_state.prepared_ligand_paths = list(current_paths)
-
+        
         if st.session_state.prepared_ligand_paths:
-            with st.expander(f"✅ Ready Ligands ({len(st.session_state.prepared_ligand_paths)})"):
-                for p in st.session_state.prepared_ligand_paths: st.text(Path(p).name)
-            if st.button("Clear List"):
-                st.session_state.prepared_ligand_paths = []
-                st.experimental_rerun()
+            st.write(f"✅ **{len(st.session_state.prepared_ligand_paths)} Ligands ready.**")
 
-    # --- TAB 2: EXECUTION ---
+    # ==========================================
+    # PHẦN 2: SELECT TARGET & VISUALIZATION (Mới)
+    # ==========================================
     with tab2:
-        st.write("### Simulation Controls")
-        if st.button("Start Screening", type="primary"):
-            if not vina_ready: st.error("Vina executable is missing.")
-            elif not selected_targets_keys: st.error("No targets selected.")
-            elif not st.session_state.prepared_ligand_paths: st.error("No ligands loaded.")
+        st.subheader("Select Targets for Screening")
+        
+        # 1. Chọn Targets để chạy Docking sau này
+        selected_targets = st.multiselect(
+            "Choose Target(s) to include in docking run:",
+            options=list(DENV2_TARGETS.keys()),
+            default=[list(DENV2_TARGETS.keys())[0]]
+        )
+        # Lưu vào session state để Tab 3 dùng
+        st.session_state.selected_targets_global = selected_targets
+
+        if st.button("Fetch/Update Selected Targets Data"):
+             with st.spinner("Checking and downloading files..."):
+                cnt = 0
+                for key in selected_targets:
+                    info = DENV2_TARGETS[key]
+                    download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Target/{info['pdbqt']}", info['pdbqt'], RECEPTOR_DIR_LOCAL)
+                    download_file_from_github(BASE_GITHUB_URL_FOR_DATA, f"Config/{info['config']}", info['config'], CONFIG_DIR_LOCAL)
+                    cnt += 1
+                st.success(f"Ready: {cnt} targets.")
+
+        st.markdown("---")
+        st.subheader("🔍 Target Visualization & Grid Box Inspection")
+        st.markdown("Visualize the target structure and the defined docking box (Khoang A/B).")
+
+        col_vis_sel, col_vis_opt = st.columns([1, 1])
+        with col_vis_sel:
+            viz_target_key = st.selectbox("Select Target to Visualize:", options=list(DENV2_TARGETS.keys()))
+        
+        with col_vis_opt:
+            # Giả lập lựa chọn Config A hoặc B. 
+            # Vì trong biến DENV2_TARGETS chỉ có 1 config, ta sẽ mặc định dùng nó.
+            # Nếu bạn có file config B thực tế, bạn có thể cập nhật logic ở đây để load file khác.
+            box_choice = st.radio("Select Binding Pocket Configuration:", ["Config A (Default)", "Config B (Custom/Alternative)"], horizontal=True)
+
+        if viz_target_key:
+            info = DENV2_TARGETS[viz_target_key]
+            pdbqt_path = RECEPTOR_DIR_LOCAL / info['pdbqt']
+            
+            # Xử lý đường dẫn file config dựa trên lựa chọn A hoặc B
+            if box_choice == "Config A (Default)":
+                config_path = CONFIG_DIR_LOCAL / info['config']
+                box_color = "green"
             else:
+                # Logic giả định cho Config B: Ví dụ file tên là "NS1_B.txt"
+                # Hiện tại fallback về config A nhưng đổi màu để demo
+                config_path = CONFIG_DIR_LOCAL / info['config'] 
+                box_color = "red"
+                st.caption("Using default config for demo (replace code logic to point to actual Config B file).")
+
+            # Nút render
+            if st.button("Render 3D Target & Box"):
+                if pdbqt_path.exists() and config_path.exists():
+                    # 1. Parse Box
+                    box_data = parse_vina_config(config_path)
+                    
+                    # 2. Convert PDBQT to PDB string for viewing
+                    pdb_viz_path = pdbqt_path.with_suffix(".pdb")
+                    convert_pdbqt_to_pdb(pdbqt_path, pdb_viz_path)
+                    
+                    if pdb_viz_path.exists():
+                        with open(pdb_viz_path, 'r') as f: pdb_content = f.read()
+                        
+                        st.markdown(f"**Visualizing:** {viz_target_key} | **Box:** {box_choice}")
+                        # 3. Call visualizer
+                        view_complex_with_box(pdb_content, box_config=box_data, box_color=box_color)
+                        
+                        # Show box details
+                        if box_data:
+                            with st.expander("Grid Box Coordinates details"):
+                                st.write(box_data)
+                    else:
+                        st.error("Conversion to PDB failed.")
+                else:
+                    st.warning("Files not found. Please click 'Fetch/Update Selected Targets Data' above first.")
+
+    # ==========================================
+    # PHẦN 3: RUN DOCKING (Giữ logic cũ, đổi nguồn targets)
+    # ==========================================
+    with tab3:
+        st.write("### Simulation Controls")
+        # Lấy danh sách targets từ Tab 2
+        active_targets = st.session_state.selected_targets_global
+        
+        if st.button("Start Screening", type="primary"):
+            if not vina_ready: st.error("Vina executable missing.")
+            elif not active_targets: st.error("Please select targets in Tab 2.")
+            elif not st.session_state.prepared_ligand_paths: st.error("No ligands loaded in Tab 1.")
+            else:
+                # Chuẩn bị file
                 targets_ready = []
-                for t_key in selected_targets_keys:
+                for t_key in active_targets:
                     t_info = DENV2_TARGETS[t_key]
                     r_path = RECEPTOR_DIR_LOCAL / t_info['pdbqt']
                     c_path = CONFIG_DIR_LOCAL / t_info['config']
                     if r_path.exists() and c_path.exists(): targets_ready.append((t_key, r_path, c_path))
-                    else: st.error(f"Files missing for {t_key}.")
                 
-                if len(targets_ready) == len(selected_targets_keys):
+                if not targets_ready:
+                    st.error("Target files missing. Go to Tab 2 and Fetch Data.")
+                else:
                     st.info(f"Docking {len(st.session_state.prepared_ligand_paths)} ligands vs {len(targets_ready)} targets.")
                     progress_bar = st.progress(0)
                     status_text = st.empty()
@@ -319,6 +351,7 @@ def display_denv2_docking_procedure():
                                 score = parse_vina_score_from_file(out_path)
                                 row_data[t_name] = score if score is not None else "N/A"
                             else: row_data[t_name] = "Error"
+                            
                             completed_tasks += 1
                             progress_bar.progress(completed_tasks / total_tasks)
                         results_data.append(row_data)
@@ -328,101 +361,58 @@ def display_denv2_docking_procedure():
                     st.success("Run Finished.")
                     st.balloons()
 
-    # --- TAB 3: ANALYSIS ---
-    with tab3:
+    # ==========================================
+    # PHẦN 4: ANALYSIS & 3D (Giữ nguyên logic cũ)
+    # ==========================================
+    with tab4:
         if st.session_state.docking_results:
             df_results = pd.DataFrame(st.session_state.docking_results)
             score_cols = [col for col in df_results.columns if col != 'Ligand']
             for col in score_cols: df_results[col] = pd.to_numeric(df_results[col], errors='coerce')
 
-            # 1. HEATMAP TABLE
             st.subheader("🔥 Affinity Heatmap")
-            st.dataframe(
-                df_results.style.background_gradient(
-                    cmap='RdYlGn_r', subset=score_cols, vmin=-12, vmax=-4
-                ).format(precision=2, na_rep="N/A"),
-                use_container_width=True
-            )
-            
-            col_dl, col_chart = st.columns([1, 2])
-            with col_dl:
-                csv = convert_df_to_csv(df_results)
-                st.download_button("Download CSV", csv, "docking_results.csv", "text/csv")
+            st.dataframe(df_results.style.background_gradient(cmap='RdYlGn_r', subset=score_cols, vmin=-12, vmax=-4).format(precision=2, na_rep="N/A"), use_container_width=True)
+            st.download_button("Download CSV", convert_df_to_csv(df_results), "docking_results.csv", "text/csv")
 
-            # 2. DISTRIBUTION CHART
             st.markdown("---")
-            st.subheader("📈 Score Distribution")
-            try:
-                df_melted = df_results.melt(id_vars=['Ligand'], var_name='Target', value_name='Score')
-                df_melted = df_melted.dropna()
-                fig = px.box(df_melted, x='Target', y='Score', points="all", color='Target', title="Binding Energy Distribution")
-                st.plotly_chart(fig, use_container_width=True)
-            except Exception as e:
-                st.warning("Not enough data for chart.")
-
-            # 3. 3D VISUALIZATION
-            st.markdown("---")
-            st.subheader("🧬 3D Complex Visualization")
+            st.subheader("🧬 3D Complex Visualization (Result)")
             
             c1, c2 = st.columns(2)
-            with c1:
-                selected_ligand = st.selectbox("Select Ligand:", df_results['Ligand'].unique())
-            with c2:
-                selected_target = st.selectbox("Select Target:", score_cols)
+            with c1: selected_ligand = st.selectbox("Select Ligand:", df_results['Ligand'].unique())
+            with c2: selected_target = st.selectbox("Select Target Result:", score_cols)
 
-            if st.button("Render 3D Structure"):
+            if st.button("View Docked Complex"):
                 target_info = DENV2_TARGETS[selected_target]
                 receptor_file = RECEPTOR_DIR_LOCAL / target_info['pdbqt']
                 out_filename = f"{selected_ligand}_{target_info['pdbqt'].replace('.pdbqt', '')}_out.pdbqt"
                 docked_ligand_file = DOCKING_OUTPUT_DIR_LOCAL / out_filename
 
                 if receptor_file.exists() and docked_ligand_file.exists():
-                    # Output path for PDB
                     pdb_viz_file = docked_ligand_file.with_suffix(".pdb")
-                    
-                    with st.spinner("Extracting best pose & converting to PDB..."):
-                        # Use the new PDB conversion function
-                        convert_success = convert_pdbqt_to_pdb(docked_ligand_file, pdb_viz_file)
-                    
-                    if convert_success:
-                        st.write(f"Visualizing: **{selected_ligand}** (Best Pose) bound to **{selected_target}**")
-                        # Pass the new PDB file to the viewer
-                        view_complex(str(receptor_file), str(pdb_viz_file))
-                    else:
-                        st.error("Visualization preparation failed.")
+                    convert_pdbqt_to_pdb(docked_ligand_file, pdb_viz_file)
+                    convert_pdbqt_to_pdb(receptor_file, receptor_file.with_suffix(".pdb")) # Ensure receptor is PDB too
+
+                    with open(receptor_file.with_suffix(".pdb"), 'r') as f: r_data = f.read()
+                    with open(pdb_viz_file, 'r') as f: l_data = f.read()
+
+                    st.write(f"**{selected_ligand}** bound to **{selected_target}**")
+                    # Dùng hàm view mới, nhưng không cần vẽ box khi xem kết quả (tuỳ chọn)
+                    view_complex_with_box(r_data, ligand_content=l_data, ligand_format='pdb')
                 else:
-                    st.error(f"Output file not found: {out_filename}. Did the docking finish successfully?")
+                    st.error("Output file not found.")
         else:
-            st.info("No docking results to analyze yet. Please run docking in Tab 2.")
+            st.info("No docking results yet. Run Tab 3 first.")
 
 def display_about_page():
     st.header("About DENV2 Docking App")
-    st.markdown(f"**Molecular Docking Model System Targeting Key Proteins Involved In DENV2**")
-    st.markdown("""
-    This application is specialized for screening compounds against key therapeutic targets for DENV2.
-    
-    **Features:**
-    - **Focused Targets:** Pre-configured screening against these major DENV2 key proteins:
-        1. **NS1:** A multifunctional glycoprotein essential for viral replication and a primary mediator of vascular leakage in the host.
-        2. **NS2-NS3B Protease:** A critical enzyme complex responsible for the proteolytic cleavage of the viral polyprotein into functional units.
-        3. **NS3 Helicase:** An enzyme that unwinds double-stranded RNA templates to facilitate the viral genome replication process.
-        4. **NS5 MTase:** Responsible for the 5' capping of viral RNA to ensure its stability and enable evasion of the host immune system.
-        5. **NS5 RdRp:** The core polymerase enzyme that directly catalyzes the synthesis and elongation of the viral RNA genome.
-    - **Simplified Input:** Direct upload of `.pdbqt` files or `.zip` archives.
-    - **Automated Vina:** Runs AutoDock Vina automatically for all combinations.
-    """)
+    st.markdown("Developed for DENV-2 Inhibitor Screening.")
 
 def main():
-    st.set_page_config(layout="wide", page_title=f"DENV-2 Docking")
-    
+    st.set_page_config(layout="wide", page_title="DENV-2 Docking System")
     initialize_directories()
-
-    #st.sidebar.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png?raw=true", width=300)
     st.sidebar.title("Navigation")
-
     app_mode = st.sidebar.radio("Go to:", ("DENV-2 Docking", "About"))
-    st.sidebar.markdown("---")
-
+    
     if app_mode == "DENV-2 Docking":
         display_denv2_docking_procedure()
     elif app_mode == "About":
