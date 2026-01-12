@@ -254,7 +254,7 @@ def display_denv2_docking_procedure():
             example_smi = "COC1=CC(N[C@H](C(=O)C2=CNC3=CC=C(OC(F)(F)F)C=C23)C2=CC=C(Cl)C=C2OC)=CC(=C1)S(C)(=O)=O"
             st.code(example_smi)
             if st.button("Process Example"):
-                with st.spinner("Processing Benzene..."):
+                with st.spinner("Processing Mosnodenvir..."):
                     result = convert_smiles_to_pdbqt(
                         example_smi, "mosnodenvir_example", LIGAND_PREP_DIR_LOCAL, 
                         7.4, False, False, SCRUB_PY_LOCAL_PATH, MK_PREPARE_LIGAND_PY_LOCAL_PATH
