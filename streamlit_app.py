@@ -165,7 +165,7 @@ def view_complex(protein_path, ligand_path):
 
 def display_denv2_docking_procedure():
     st.header(f"Molecular Docking Model System Targeting Key Proteins Involved In DENV-2")
-    st.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/main/App.png", use_column_width=True)
+    st.image("https://github.com/ngcmy/DENV-2-Docking-system/blob/14ac5251c2d54e5d8638056b19b39a966072ef3c/App.png", use_column_width=True)
     
     # Initialize session state
     if 'docking_results' not in st.session_state:
