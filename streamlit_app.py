@@ -107,21 +107,34 @@ def parse_vina_config(config_path):
         return None
 
 def parse_vina_score_from_file(file_path):
+    """
+    Hàm đọc file output PDBQT và lấy điểm năng lượng liên kết thấp nhất (best affinity).
+    """
     best_affinity = None
     try:
         with open(file_path, 'r') as f:
             for line in f:
                 if line.startswith('REMARK VINA RESULT'):
                     parts = line.split()
-                    if len(parts) >= 4: best_affinity = float(parts[3])
+                    # Định dạng thường là: REMARK VINA RESULT: -9.5 0.000 0.000
+                    if len(parts) >= 4:
+                        best_affinity = float(parts[3])
                     break
-    except Exception: pass
+    except Exception:
+        pass
     return best_affinity
 
 def run_single_docking(vina_path, receptor_path, ligand_path, config_path, output_path):
+    """
+    Hàm chạy Vina cho 1 cặp Receptor - Ligand.
+    """
     cmd = [
-        str(vina_path), "--receptor", str(receptor_path), "--ligand", str(ligand_path),
-        "--config", str(config_path), "--out", str(output_path), "--cpu", "2"
+        str(vina_path),
+        "--receptor", str(receptor_path),
+        "--ligand", str(ligand_path),
+        "--config", str(config_path),
+        "--out", str(output_path),
+        "--cpu", "2" # Sử dụng 2 CPU cho mỗi tác vụ để cân bằng
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     return proc.returncode, proc.stdout, proc.stderr
