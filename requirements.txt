@@ -1,3 +1,8 @@
+# --- Streamlit & Web App (Install last to ensure dependencies are met) ---
+streamlit
+streamlit-ketcher
+stmol
+
 # --- Build Tools ---
 setuptools
 
@@ -22,9 +27,4 @@ ipython_genutils
 ipywidgets
 py3Dmol
 plotly
-
-# --- Streamlit & Web App (Install last to ensure dependencies are met) ---
-streamlit
-streamlit-ketcher
-stmol
 
