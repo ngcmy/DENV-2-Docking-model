@@ -2,10 +2,10 @@ from pathlib import Path
 
 APP_VERSION = "1.0.0" # Updated version
 
-BASE_GITHUB_URL_FOR_DATA = "https://raw.githubusercontent.com/ngcmy/DENV-2-Docking-model/main/"
+BASE_GITHUB_URL_FOR_DATA = "https://github.com/ngcmy/DENV-2-Docking-system/tree/main"
 GH_API_BASE_URL = "https://api.github.com/repos/"
 GH_OWNER = "ngcmy"
-GH_REPO = "DENV-2-Docking-model"
+GH_REPO = "DENV-2-Docking-system"
 GH_BRANCH = "main"
 GH_ENSEMBLE_DOCKING_ROOT_PATH = "ensemble-docking"
 RECEPTOR_SUBDIR_GH = "ensemble_protein/"
