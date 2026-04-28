@@ -36,11 +36,11 @@ from utils.app_utils import (
 # Bạn cần đảm bảo tên file trên GitHub khớp với định nghĩa ở đây.
 DENV2_TARGETS = {
     "NS1_A": {
-        "pdbqt": "NS1.pdbqt",
+        "pdbqt": "NS1_A.pdbqt",
         "config": "NS1_A.txt"
     },
     "NS1_B": {
-        "pdbqt": "NS1.pdbqt",
+        "pdbqt": "NS1_B.pdbqt",
         "config": "NS1_B.txt"
     },
     "NS3 Helicase": {
