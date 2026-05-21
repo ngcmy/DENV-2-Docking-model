@@ -35,13 +35,13 @@ from utils.app_utils import (
 # Giả định các file này nằm trong thư mục 'receptors' và 'configs' trên GitHub
 # Bạn cần đảm bảo tên file trên GitHub khớp với định nghĩa ở đây.
 DENV2_TARGETS = {
-    "NS1_A": {
-        "pdbqt": "NS1_A.pdbqt",
-        "config": "NS1_A.txt"
+    "NS1_A1": {
+        "pdbqt": "NS1_A1.pdbqt",
+        "config": "NS1_A1.txt"
     },
-    "NS1_B": {
-        "pdbqt": "NS1_B.pdbqt",
-        "config": "NS1_B.txt"
+    "NS1_A2": {
+        "pdbqt": "NS1_A2.pdbqt",
+        "config": "NS1_A2.txt"
     },
     "NS3 Helicase": {
         "pdbqt": "NS3_Helicase.pdbqt",
@@ -407,7 +407,7 @@ def display_about_page():
     
     **Features:**
     - **Focused Targets:** Pre-configured screening against these major DENV2 key proteins:
-        1. **NS1:** A multifunctional glycoprotein essential for viral replication and a primary mediator of vascular leakage in the host.
+        1. **NS1:** A multifunctional glycoprotein essential for viral replication and a primary mediator of vascular leakage in the host. With protein NS1, the application proposes two potential binding site options are: NS1-A1 and NS1-A2.
         2. **NS2-NS3B Protease:** A critical enzyme complex responsible for the proteolytic cleavage of the viral polyprotein into functional units.
         3. **NS3 Helicase:** An enzyme that unwinds double-stranded RNA templates to facilitate the viral genome replication process.
         4. **NS5 MTase:** Responsible for the 5' capping of viral RNA to ensure its stability and enable evasion of the host immune system.
